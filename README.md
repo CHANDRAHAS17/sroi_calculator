@@ -1,0 +1,1 @@
+This is an SROI calculator for the NGO NIRMAAN. SROI stands for Social Return On Investment and this calculator is an effective tool to estimate the return on social, economic, environmental outcomes.
