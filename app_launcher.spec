@@ -1,6 +1,6 @@
 # -*- mode: python ; coding: utf-8 -*-
 
-# ✅ Define datas separately
+# Define datas separately
 datas = [
     ('NIRMAAN_logo.png', '.'),
     ('app.py', '.'),
