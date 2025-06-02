@@ -2,7 +2,7 @@ import streamlit as st
 import os
 import sys
 
-# ✅ Helper to get correct path when packaged with PyInstaller
+# Helper to get correct path when packaged with PyInstaller
 def resource_path(relative_path):
     try:
         base_path = sys._MEIPASS  
@@ -10,14 +10,14 @@ def resource_path(relative_path):
         base_path = os.path.abspath(".")
     return os.path.join(base_path, relative_path)
 
-# ✅ Set page config
+# Set page config
 st.set_page_config(
     page_title="NIRMAAN SROI Calculator",
     layout="centered",
     initial_sidebar_state="expanded"
 )
 
-# 
+
 col1, col2 = st.columns([1, 4])
 with col1:
     st.image(resource_path("NIRMAAN_logo.png"), width=350)
