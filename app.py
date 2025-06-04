@@ -3,7 +3,7 @@ import os
 import sys
 import base64  
 
-# Helper to get correct path when packaged with PyInstaller
+
 def resource_path(relative_path):
     try:
         base_path = sys._MEIPASS  
@@ -18,7 +18,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Header with clickable logo
+
 col1, col2 = st.columns([1, 4])
 with col1:
     logo_path = resource_path("NIRMAAN_logo.png")
