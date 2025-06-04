@@ -1,6 +1,7 @@
 import streamlit as st
 import os
 import sys
+import base64  
 
 # Helper to get correct path when packaged with PyInstaller
 def resource_path(relative_path):
@@ -17,10 +18,17 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-
+# Header with clickable logo
 col1, col2 = st.columns([1, 4])
 with col1:
-    st.image(resource_path("NIRMAAN_logo.png"), width=350)
+    logo_path = resource_path("NIRMAAN_logo.png")
+    with open(logo_path, "rb") as img_file:
+        encoded_logo = base64.b64encode(img_file.read()).decode()
+    st.markdown(
+        f'<a href="https://nirmaan.org" target="_blank">'
+        f'<img src="data:image/png;base64,{encoded_logo}" width="350"></a>',
+        unsafe_allow_html=True
+    )
 with col2:
     st.title("NIRMAAN'S SROI Calculator")
     st.markdown("*Estimate the social value created by your project in just a few steps!*")
@@ -33,6 +41,15 @@ with st.expander("ℹ️ What is SROI?"):
     
     The method can be used by any entity to evaluate impact on stakeholders, identify ways to improve performance, 
     and enhance the performance of investments.
+    """)
+
+# EXPANDER: Definition of Key Terms
+with st.expander("📘 Definition of Key Terms"):
+    st.markdown("""
+    - **Deadweight**: The portion of the outcome that would have happened even without the project.
+    - **Drop Off**: The decline in the benefits of an outcome over time.
+    - **Displacement**: When your project’s benefit unintentionally causes a loss elsewhere.
+    - **Attribution**: The extent to which the outcome is directly due to your project, and not others.
     """)
 
 # Sidebar Inputs
@@ -57,22 +74,22 @@ for i in range(int(num_outcomes)):
             quantity = st.number_input(f"👥 Quantity for Outcome {i+1}", min_value=0.0, key=f"qty_{i}")
             deadweight = st.number_input(
                 f"🎯 Deadweight (0-1)", min_value=0.0, max_value=1.0, value=0.1, key=f"dw_{i}",
-                help="Deadweight is the % of outcome that would have happened anyway."
+                help="The portion of the outcome that would have happened even without the project."
             )
             dropoff = st.number_input(
                 f"📉 Drop-off (0-1)", min_value=0.0, max_value=1.0, value=0.1, key=f"do_{i}",
-                help="Drop-off is the reduction in outcomes over time."
+                help="The decline in the benefits of an outcome over time."
             )
 
         with col2:
             value = st.number_input(f"💸 Value per Unit (₹)", min_value=0.0, key=f"val_{i}")
             attribution = st.number_input(
                 f"🙋 Attribution (0-1)", min_value=0.0, max_value=1.0, value=0.8, key=f"att_{i}",
-                help="Attribution is the % of outcome caused by your intervention."
+                help="The extent to which the outcome is directly due to your project."
             )
             displacement = st.number_input(
                 f"🔄 Displacement (0-1)", min_value=0.0, max_value=1.0, value=0.0, key=f"disp_{i}",
-                help="Displacement is how much your outcome displaced something else."
+                help="When your project’s benefit causes a loss or reduction elsewhere."
             )
 
         # Adjusted value calculation
@@ -100,7 +117,6 @@ with st.spinner("Calculating your SROI..."):
     st.metric("Total Net Adjusted Value", f"₹ {net_adjusted_value:,.2f}")
     st.success(f"💡 Final SROI: {sroi:.4f}")
 
-    # 🎉 Only show balloons for strong SROI
     if sroi >= 1:
         st.balloons()
 
