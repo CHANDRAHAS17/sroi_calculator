@@ -1,12 +1,14 @@
 import streamlit as st
 import os
 import sys
-import base64  
-
+import base64
+import pandas as pd
+import matplotlib.pyplot as plt
+from io import StringIO
 
 def resource_path(relative_path):
     try:
-        base_path = sys._MEIPASS  
+        base_path = sys._MEIPASS
     except Exception:
         base_path = os.path.abspath(".")
     return os.path.join(base_path, relative_path)
@@ -18,6 +20,33 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# Custom CSS Styling
+st.markdown("""
+    <style>
+        .css-10trblm.e16nr0p30 {
+            text-align: center;
+        }
+
+        section[data-testid="stSidebar"] {
+            background-color: #f0f2f6;
+        }
+
+        div[data-testid="metric-container"] {
+            background-color: #ffffff;
+            border-radius: 12px;
+            padding: 10px;
+            box-shadow: 0px 2px 5px rgba(0,0,0,0.1);
+        }
+
+        footer {
+            visibility: hidden;
+        }
+
+        html, body, [class*="css"] {
+            font-family: 'Segoe UI', sans-serif;
+        }
+    </style>
+""", unsafe_allow_html=True)
 
 col1, col2 = st.columns([1, 4])
 with col1:
@@ -63,6 +92,7 @@ num_outcomes = st.sidebar.number_input("📦 Number of Outcomes", min_value=1, s
 st.markdown("## 📦 Outcome Details")
 
 net_adjusted_value = 0
+outcome_data = []
 
 for i in range(int(num_outcomes)):
     with st.container():
@@ -92,7 +122,6 @@ for i in range(int(num_outcomes)):
                 help="When your project’s benefit causes a loss or reduction elsewhere."
             )
 
-        # Adjusted value calculation
         adjusted = (
             quantity
             * value
@@ -102,7 +131,37 @@ for i in range(int(num_outcomes)):
             * (1 - displacement)
         )
 
+        outcome_data.append({
+            "Outcome": f"Outcome {i+1}",
+            "Quantity": quantity,
+            "Value/Unit (₹)": value,
+            "Deadweight": deadweight,
+            "Dropoff": dropoff,
+            "Attribution": attribution,
+            "Displacement": displacement,
+            "Adjusted Value": adjusted
+        })
+
         net_adjusted_value += adjusted
+
+# 📥 CSV Export Button
+df = pd.DataFrame(outcome_data)
+csv = df.to_csv(index=False).encode('utf-8')
+st.download_button("📥 Download Outcome Data as CSV", data=csv, file_name="sroi_outcomes.csv", mime="text/csv")
+
+# 📊 Pie Chart Visualization
+st.markdown("### 📊 Outcome Contribution Breakdown")
+
+if net_adjusted_value > 0:
+    labels = [row["Outcome"] for row in outcome_data]
+    values = [row["Adjusted Value"] for row in outcome_data]
+
+    fig, ax = plt.subplots()
+    ax.pie(values, labels=labels, autopct="%1.1f%%", startangle=90)
+    ax.axis("equal")
+    st.pyplot(fig)
+else:
+    st.info("Enter outcome data to see the chart.")
 
 # Final Results Section
 st.markdown("---")
