@@ -82,10 +82,11 @@ def generate_pdf_report(logo_path, chart_bytes, df, net_value, sroi, project_typ
             f.write(chart_bytes.getbuffer())
         pdf.image(chart_path, x=pdf.l_margin, w=pdf.w - 2 * pdf.l_margin)
 
-    pdf_output = BytesIO()
-    pdf.output(pdf_output)
-    pdf_output.seek(0)
-    return pdf_output
+    # Generate PDF as bytes and return
+    pdf_str = pdf.output(dest='S').encode('latin1')
+    pdf_bytes_io = BytesIO(pdf_str)
+    pdf_bytes_io.seek(0)
+    return pdf_bytes_io
 
 st.set_page_config(page_title="NIRMAAN SROI Calculator", layout="centered")
 st.markdown("""
