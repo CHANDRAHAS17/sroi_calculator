@@ -39,7 +39,6 @@ def generate_pdf_report(logo_path, chart_bytes, df, net_value, sroi, project_typ
     pdf.set_font("Arial", "B", 12)
     pdf.cell(0, 10, f"Project Name: {project_name}", ln=True)
 
-
     pdf.set_font("Arial", "B", 12)
     pdf.set_text_color(0, 0, 0)
     pdf.cell(0, 10, f"Project Type: {project_type}", ln=True)
