@@ -8,6 +8,8 @@ import json
 from io import BytesIO
 from fpdf import FPDF
 from PIL import Image
+from pdf2image import convert_from_path
+import tempfile
 
 def resource_path(relative_path):
     try:
@@ -16,7 +18,7 @@ def resource_path(relative_path):
         base_path = os.path.abspath(".")
     return os.path.join(base_path, relative_path)
 
-def generate_pdf_report(logo_path, chart_bytes, df, net_value, sroi, project_type):
+def generate_pdf_report(logo_path, chart_bytes, df, net_value, sroi, project_type, project_name):
     pdf = FPDF()
     pdf.add_page()
     pdf.set_auto_page_break(auto=True, margin=15)
@@ -31,6 +33,12 @@ def generate_pdf_report(logo_path, chart_bytes, df, net_value, sroi, project_typ
     pdf.set_text_color(0, 0, 128)
     pdf.cell(0, 10, "NIRMAAN SROI Report", ln=True, align="C")
     pdf.ln(10)
+
+    pdf.set_font("Arial", "", 12)
+    pdf.set_text_color(50, 50, 50)
+    pdf.set_font("Arial", "B", 12)
+    pdf.cell(0, 10, f"Project Name: {project_name}", ln=True)
+
 
     pdf.set_font("Arial", "B", 12)
     pdf.set_text_color(0, 0, 0)
@@ -82,9 +90,8 @@ def generate_pdf_report(logo_path, chart_bytes, df, net_value, sroi, project_typ
             f.write(chart_bytes.getbuffer())
         pdf.image(chart_path, x=pdf.l_margin, w=pdf.w - 2 * pdf.l_margin)
 
-    # Generate PDF as bytes and return
-    pdf_str = pdf.output(dest='S').encode('latin1')
-    pdf_bytes_io = BytesIO(pdf_str)
+    pdf_bytes_io = BytesIO()
+    pdf.output(pdf_bytes_io)
     pdf_bytes_io.seek(0)
     return pdf_bytes_io
 
@@ -132,17 +139,27 @@ with st.expander("📘 Definition of Key Terms"):
     - **Drop Off**: The decline in the benefits of an outcome over time.
     - **Displacement**: When your project’s benefit unintentionally causes a loss elsewhere.
     - **Attribution**: The extent to which the outcome is directly due to your project, and not others.
+
+    **📄 View detailed explanation below:**
     """)
+
+    detailed_pdf_path = resource_path("Manual for Factors.pdf")
+    with tempfile.TemporaryDirectory() as temp_dir:
+        images = convert_from_path(detailed_pdf_path, output_folder=temp_dir, fmt="png", dpi=150)
+        for page_num, img in enumerate(images, 1):
+            st.image(img, caption=f"Page {page_num}", use_container_width=True)
 
 st.sidebar.header("📊 Project Inputs")
 project_type = st.sidebar.selectbox("🏗️ Project Type", [
     "Education", "Skill Development and Entrepreneurship",
     "Social Leadership", "Environment", "Health", "Rural Development"])
 
+project_name = st.sidebar.text_input("📝 Project Name", value="My SROI Project")
+
 total_cost = st.sidebar.number_input("💰 Total Project Cost (Rs)", min_value=0.0, step=100.0)
 num_outcomes = st.sidebar.number_input("📦 Number of Outcomes", min_value=1, step=1, value=1)
 
-uploaded_json = st.sidebar.file_uploader("📤 Load Previous Session (.json)", type=["json"])
+uploaded_json = st.sidebar.file_uploader("📄 Load Previous Session (.json)", type=["json"])
 if uploaded_json:
     session_data = json.load(uploaded_json)
     total_cost = session_data.get("total_cost", total_cost)
@@ -169,7 +186,7 @@ for i in range(int(num_outcomes)):
         dropoff = st.number_input(f"📉 Drop-off (0-1)", 0.0, 1.0, value=prev.get("Dropoff", 0.1), key=f"do_{i}")
     with col2:
         value = st.number_input(f"💸 Value per Unit (Rs)", min_value=0.0, value=prev.get("Value/Unit (Rs)", 0.0), key=f"val_{i}")
-        attribution = st.number_input(f"🙋 Attribution (0-1)", 0.0, 1.0, value=prev.get("Attribution", 0.8), key=f"att_{i}")
+        attribution = st.number_input(f"🤛 Attribution (0-1)", 0.0, 1.0, value=prev.get("Attribution", 0.8), key=f"att_{i}")
         displacement = st.number_input(f"🔄 Displacement (0-1)", 0.0, 1.0, value=prev.get("Displacement", 0.0), key=f"disp_{i}")
 
     adjusted = quantity * value * (1 - deadweight) * attribution * (1 - dropoff) * (1 - displacement)
@@ -189,7 +206,7 @@ for i in range(int(num_outcomes)):
 
 df = pd.DataFrame(outcome_data)
 csv = df.to_csv(index=False).encode("utf-8")
-st.download_button("📥 Download Outcome Data as CSV", data=csv, file_name="sroi_outcomes.csv", mime="text/csv")
+st.download_button("📅 Download Outcome Data as CSV", data=csv, file_name="sroi_outcomes.csv", mime="text/csv")
 
 st.markdown("### 📊 Outcome Contribution Breakdown")
 if net_adjusted_value > 0:
@@ -214,7 +231,7 @@ if sroi >= 1:
     st.balloons()
 
 if st.button("📄 Download PDF Report"):
-    pdf_bytes_io = generate_pdf_report(logo_path, chart_bytes, df, net_adjusted_value, sroi, project_type)
+    pdf_bytes_io = generate_pdf_report(logo_path, chart_bytes, df, net_adjusted_value, sroi, project_type, project_name)
     st.download_button("⬇️ Download Full Report", data=pdf_bytes_io, file_name="sroi_report.pdf", mime="application/pdf")
 
 session_state = {
