@@ -16,7 +16,7 @@ def resource_path(relative_path):
         base_path = os.path.abspath(".")
     return os.path.join(base_path, relative_path)
 
-def generate_pdf_report(logo_path, chart_bytes, df, net_value, sroi, project_type):
+def generate_pdf_report(logo_path, chart_bytes, df, net_value, sroi, project_type, project_name):
     pdf = FPDF()
     pdf.add_page()
     pdf.set_auto_page_break(auto=True, margin=15)
@@ -27,13 +27,20 @@ def generate_pdf_report(logo_path, chart_bytes, df, net_value, sroi, project_typ
     else:
         pdf.set_xy(10, 10)
 
-    pdf.set_font("Arial", "B", 18)
+    # Centered Title
+    title = "NIRMAAN SROI Report"
+    pdf.set_font("Helvetica", "B", 18)  # Use a built-in font
+    text_width = pdf.get_string_width(title) + 6
+    page_width = pdf.w
+    center_x = (page_width - text_width) / 2
+    pdf.set_xy(center_x, 20)
     pdf.set_text_color(0, 0, 128)
-    pdf.cell(0, 10, "NIRMAAN SROI Report", ln=True, align="C")
+    pdf.cell(text_width, 10, title, ln=True)
     pdf.ln(10)
 
     pdf.set_font("Arial", "B", 12)
     pdf.set_text_color(0, 0, 0)
+    pdf.cell(0, 10, f"Project Name: {project_name}", ln=True)
     pdf.cell(0, 10, f"Project Type: {project_type}", ln=True)
     pdf.cell(0, 10, f"Total Net Adjusted Value: Rs {net_value:,.2f}", ln=True)
     pdf.cell(0, 10, f"Final SROI: {sroi:.4f}", ln=True)
@@ -82,11 +89,17 @@ def generate_pdf_report(logo_path, chart_bytes, df, net_value, sroi, project_typ
             f.write(chart_bytes.getbuffer())
         pdf.image(chart_path, x=pdf.l_margin, w=pdf.w - 2 * pdf.l_margin)
 
-    # Generate PDF as bytes and return
-    pdf_str = pdf.output(dest='S').encode('latin1')
-    pdf_bytes_io = BytesIO(pdf_str)
+    pdf_output = pdf.output(dest='S')
+    if isinstance(pdf_output, str):
+        pdf_bytes = pdf_output.encode('latin1')
+    else:
+        pdf_bytes = pdf_output
+
+    pdf_bytes_io = BytesIO(pdf_bytes)
     pdf_bytes_io.seek(0)
     return pdf_bytes_io
+
+
 
 st.set_page_config(page_title="NIRMAAN SROI Calculator", layout="centered")
 st.markdown("""
@@ -135,6 +148,7 @@ with st.expander("📘 Definition of Key Terms"):
     """)
 
 st.sidebar.header("📊 Project Inputs")
+project_name = st.sidebar.text_input("📛 Project Name", value="My Project")
 project_type = st.sidebar.selectbox("🏗️ Project Type", [
     "Education", "Skill Development and Entrepreneurship",
     "Social Leadership", "Environment", "Health", "Rural Development"])
@@ -145,6 +159,7 @@ num_outcomes = st.sidebar.number_input("📦 Number of Outcomes", min_value=1, s
 uploaded_json = st.sidebar.file_uploader("📤 Load Previous Session (.json)", type=["json"])
 if uploaded_json:
     session_data = json.load(uploaded_json)
+    project_name = session_data.get("project_name", project_name)
     total_cost = session_data.get("total_cost", total_cost)
     num_outcomes = session_data.get("num_outcomes", num_outcomes)
     previous_outcomes = session_data.get("outcomes", [])
@@ -214,10 +229,11 @@ if sroi >= 1:
     st.balloons()
 
 if st.button("📄 Download PDF Report"):
-    pdf_bytes_io = generate_pdf_report(logo_path, chart_bytes, df, net_adjusted_value, sroi, project_type)
+    pdf_bytes_io = generate_pdf_report(logo_path, chart_bytes, df, net_adjusted_value, sroi, project_type, project_name)
     st.download_button("⬇️ Download Full Report", data=pdf_bytes_io, file_name="sroi_report.pdf", mime="application/pdf")
 
 session_state = {
+    "project_name": project_name,
     "total_cost": total_cost,
     "num_outcomes": num_outcomes,
     "outcomes": outcome_data
