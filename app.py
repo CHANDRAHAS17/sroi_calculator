@@ -52,9 +52,9 @@ def generate_pdf_report(logo_path, chart_bytes, df, net_value, sroi, project_typ
     usable_width = pdf.w - 2 * pdf.l_margin
 
     base_weights = {
-        "Title": 3, "Outcome": 2, "Adjusted Value": 2,
-        "Quantity": 1, "Value/Unit (Rs)": 1, "Deadweight": 1,
-        "Dropoff": 1, "Attribution": 1, "Displacement": 1
+        "Title": 3.5, "Outcome": 1.4, "Adjusted Value": 2.25,
+        "Quantity": 1.5, "Value/Unit (Rs)": 1.5, "Deadweight": 0.75,
+        "Dropoff": 0.75, "Attribution": 0.75, "Displacement": 0.75
     }
     weights = [base_weights.get(name, 1) for name in col_names]
     weight_sum = sum(weights)
